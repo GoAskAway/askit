@@ -17,20 +17,20 @@ describe('Bus (Remote)', () => {
 
   beforeEach(() => {
     // Save original globals
-    originalSendToHost = (globalThis as Record<string, unknown>).sendToHost;
-    originalOnHostEvent = (globalThis as Record<string, unknown>).onHostEvent;
+    originalSendToHost = (globalThis as Record<string, unknown>)['sendToHost'];
+    originalOnHostEvent = (globalThis as Record<string, unknown>)['onHostEvent'];
 
     // Reset test state
     sentMessages = [];
     hostEventCallback = null;
 
     // Setup simulated sandbox globals
-    (globalThis as Record<string, unknown>).sendToHost = (event: string, payload?: unknown) => {
+    (globalThis as Record<string, unknown>)['sendToHost'] = (event: string, payload?: unknown) => {
       sentMessages.push({ event, payload });
     };
 
     // Setup onHostEvent to capture the callback
-    (globalThis as Record<string, unknown>).onHostEvent = (
+    (globalThis as Record<string, unknown>)['onHostEvent'] = (
       callback: (event: string, payload: unknown) => void
     ) => {
       hostEventCallback = callback;
@@ -42,8 +42,8 @@ describe('Bus (Remote)', () => {
 
   afterEach(() => {
     // Restore original globals
-    (globalThis as Record<string, unknown>).sendToHost = originalSendToHost;
-    (globalThis as Record<string, unknown>).onHostEvent = originalOnHostEvent;
+    (globalThis as Record<string, unknown>)['sendToHost'] = originalSendToHost;
+    (globalThis as Record<string, unknown>)['onHostEvent'] = originalOnHostEvent;
   });
 
   describe('emit', () => {
@@ -56,7 +56,7 @@ describe('Bus (Remote)', () => {
     it('should prefix events with bus:', () => {
       bus.emit('customEvent', 'payload');
 
-      expect(sentMessages[0].event).toBe('bus:customEvent');
+      expect(sentMessages[0]?.event).toBe('bus:customEvent');
     });
 
     it('should handle emit without payload', () => {
@@ -73,7 +73,7 @@ describe('Bus (Remote)', () => {
 
       bus.emit('complex', complexPayload);
 
-      expect(sentMessages[0].payload).toEqual(complexPayload);
+      expect(sentMessages[0]?.payload).toEqual(complexPayload);
     });
 
     it('should also notify local listeners', () => {
@@ -262,7 +262,7 @@ describe('Bus (Remote)', () => {
   describe('without sendToHost', () => {
     it('should warn when sendToHost is not available', () => {
       // Remove sendToHost
-      (globalThis as Record<string, unknown>).sendToHost = undefined;
+      (globalThis as Record<string, unknown>)['sendToHost'] = undefined;
 
       const busWithoutHost = new RemoteBus();
 
@@ -273,7 +273,7 @@ describe('Bus (Remote)', () => {
       busWithoutHost.emit('test', 'data');
 
       expect(warnings.length).toBe(1);
-      expect(warnings[0][0]).toContain('sendToHost not available');
+      expect((warnings[0] as unknown[])?.[0]).toContain('sendToHost not available');
 
       console.warn = consoleWarn;
     });
