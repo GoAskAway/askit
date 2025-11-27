@@ -272,9 +272,9 @@ describe('Bus (Native)', () => {
         received.push(payload);
       });
 
-      bus._handleEngineMessage('fromEngine', { source: 'plugin' });
+      bus._handleEngineMessage('fromEngine', { source: 'guest' });
 
-      expect(received).toEqual([{ source: 'plugin' }]);
+      expect(received).toEqual([{ source: 'guest' }]);
     });
 
     it('should catch errors in _handleEngineMessage listeners', () => {

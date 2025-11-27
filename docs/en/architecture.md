@@ -64,7 +64,7 @@ The `package.json` uses conditional exports to serve different bundles:
                                     Message Protocol (JSON)
                                                   │
 ┌─────────────────────────────────────────────────┼──────────┐
-│                        PLUGIN                    │          │
+│                        GUEST                     │          │
 │                                                  ▼          │
 │                                        ┌──────────────┐    │
 │                                        │   QuickJS    │    │

@@ -15,7 +15,7 @@ export default defineConfig([
       options.conditions = ['react-native'];
     },
   },
-  // Remote build (Plugin - QuickJS/Sandbox)
+  // Remote build (Guest - QuickJS/Sandbox)
   {
     entry: {
       index: 'src/index.remote.ts',
