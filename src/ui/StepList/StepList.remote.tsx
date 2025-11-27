@@ -1,5 +1,5 @@
 /**
- * StepList - Remote Definition (Plugin/Sandbox)
+ * StepList - Remote Definition (Guest/Sandbox)
  *
  * This is a DSL definition that tells Rill which native component to use.
  * The actual rendering happens on the Host side.

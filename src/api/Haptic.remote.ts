@@ -1,5 +1,5 @@
 /**
- * Haptic - Remote Implementation (Plugin/Sandbox)
+ * Haptic - Remote Implementation (Guest/Sandbox)
  *
  * In sandbox environment, Haptic sends commands to Host through the bridge.
  */

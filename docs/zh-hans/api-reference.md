@@ -2,7 +2,7 @@
 
 ## Bus
 
-Bus API 提供 Host 与 Plugin 之间基于事件的通信。
+Bus API 提供 Host 与 Guest 之间基于事件的通信。
 
 ### 方法
 

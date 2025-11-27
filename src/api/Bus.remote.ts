@@ -1,5 +1,5 @@
 /**
- * Bus - Remote Implementation (Plugin/Sandbox)
+ * Bus - Remote Implementation (Guest/Sandbox)
  *
  * In sandbox environment, Bus communicates with Host through the bridge.
  * Uses global.sendToHost and global.onHostEvent provided by Rill runtime.

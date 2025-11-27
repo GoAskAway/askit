@@ -11,7 +11,7 @@ askit implements an **isomorphic architecture** that enables the same code to ru
 Developers write code using the same API surface regardless of the execution environment:
 
 ```typescript
-// This code works in both Host and Plugin
+// This code works in both Host and Guest
 import { Bus, Toast } from 'askit';
 
 Bus.emit('action', { type: 'click' });
@@ -120,10 +120,10 @@ export const Toast = {
 
 ### Bridge (`core/bridge.ts`)
 
-Routes messages from Plugin to appropriate handlers:
+Routes messages from Guest to appropriate handlers:
 
 ```typescript
-function handlePluginMessage(message: PluginMessage) {
+function handleGuestMessage(message: GuestMessage) {
   const parsed = parseAskitEvent(message.event);
   // 'askit:toast:show' → module='toast', method='show'
 

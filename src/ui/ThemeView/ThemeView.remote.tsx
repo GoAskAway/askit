@@ -1,5 +1,5 @@
 /**
- * ThemeView - Remote Definition (Plugin/Sandbox)
+ * ThemeView - Remote Definition (Guest/Sandbox)
  */
 
 export const ThemeView = 'ThemeView';

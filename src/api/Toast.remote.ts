@@ -1,5 +1,5 @@
 /**
- * Toast - Remote Implementation (Plugin/Sandbox)
+ * Toast - Remote Implementation (Guest/Sandbox)
  *
  * In sandbox environment, Toast sends commands to Host through the bridge.
  */

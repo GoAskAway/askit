@@ -1,15 +1,15 @@
 # Components
 
-askit provides a set of UI components that work across Host and Plugin environments.
+askit provides a set of UI components that work across Host and Guest environments.
 
 ## How Components Work
 
-In **Plugin** (QuickJS): Components return DSL (Domain Specific Language) objects that describe the UI structure.
+In **Guest** (QuickJS): Components return DSL (Domain Specific Language) objects that describe the UI structure.
 
 In **Host** (React Native): Components render as actual React Native views.
 
 ```typescript
-// Plugin side - generates DSL
+// Guest side - generates DSL
 const avatar = UserAvatar({ uri: 'https://...', size: 48 });
 // Returns: { type: 'UserAvatar', props: { uri: '...', size: 48 } }
 
@@ -153,7 +153,7 @@ ChatBubble({
 
 You can create custom components that follow the same pattern:
 
-### In Plugin (DSL Generator)
+### In Guest (DSL Generator)
 
 ```typescript
 // my-component.remote.tsx

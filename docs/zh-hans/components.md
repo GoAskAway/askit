@@ -1,15 +1,15 @@
 # 组件
 
-askit 提供一组可在 Host 和 Plugin 环境中使用的 UI 组件。
+askit 提供一组可在 Host 和 Guest 环境中使用的 UI 组件。
 
 ## 组件工作原理
 
-在 **Plugin** (QuickJS) 中：组件返回描述 UI 结构的 DSL（领域特定语言）对象。
+在 **Guest** (QuickJS) 中：组件返回描述 UI 结构的 DSL（领域特定语言）对象。
 
 在 **Host** (React Native) 中：组件渲染为实际的 React Native 视图。
 
 ```typescript
-// Plugin 端 - 生成 DSL
+// Guest 端 - 生成 DSL
 const avatar = UserAvatar({ uri: 'https://...', size: 48 });
 // 返回: { type: 'UserAvatar', props: { uri: '...', size: 48 } }
 
@@ -153,7 +153,7 @@ ChatBubble({
 
 你可以创建遵循相同模式的自定义组件：
 
-### 在 Plugin 中（DSL 生成器）
+### 在 Guest 中（DSL 生成器）
 
 ```typescript
 // my-component.remote.tsx

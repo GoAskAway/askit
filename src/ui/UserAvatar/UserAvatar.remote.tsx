@@ -1,5 +1,5 @@
 /**
- * UserAvatar - Remote Definition (Plugin/Sandbox)
+ * UserAvatar - Remote Definition (Guest/Sandbox)
  */
 
 export const UserAvatar = 'UserAvatar';

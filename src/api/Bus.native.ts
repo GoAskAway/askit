@@ -1,7 +1,7 @@
 /**
  * Bus - Native Implementation (Host App)
  *
- * Provides event-based communication between Host and Plugin engines.
+ * Provides event-based communication between Host and Guest engines.
  * In native environment, Bus manages multiple engine instances and broadcasts events.
  */
 

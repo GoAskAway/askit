@@ -1,5 +1,5 @@
 /**
- * UI Components - Remote exports (Plugin/Sandbox)
+ * UI Components - Remote exports (Guest/Sandbox)
  *
  * These are DSL identifiers that map to native components on the Host.
  */

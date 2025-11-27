@@ -1,5 +1,5 @@
 /**
- * API exports for Remote (Plugin/Sandbox) environment
+ * API exports for Remote (Guest/Sandbox) environment
  */
 
 export { Bus } from './Bus.remote';

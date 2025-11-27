@@ -11,7 +11,7 @@ askit 实现了**同构架构**，使相同的代码能够在不同环境中运�
 开发者使用相同的 API 接口编写代码，无论执行环境如何：
 
 ```typescript
-// 这段代码在 Host 和 Plugin 中都能工作
+// 这段代码在 Host 和 Guest 中都能工作
 import { Bus, Toast } from 'askit';
 
 Bus.emit('action', { type: 'click' });
@@ -120,10 +120,10 @@ export const Toast = {
 
 ### 桥接 (`core/bridge.ts`)
 
-将 Plugin 消息路由到适当的处理器：
+将 Guest 消息路由到适当的处理器：
 
 ```typescript
-function handlePluginMessage(message: PluginMessage) {
+function handleGuestMessage(message: GuestMessage) {
   const parsed = parseAskitEvent(message.event);
   // 'askit:toast:show' → module='toast', method='show'
 

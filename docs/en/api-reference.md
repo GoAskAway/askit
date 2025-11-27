@@ -2,7 +2,7 @@
 
 ## Bus
 
-The Bus API provides event-based communication between Host and Plugin.
+The Bus API provides event-based communication between Host and Guest.
 
 ### Methods
 
