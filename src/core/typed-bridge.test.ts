@@ -2,8 +2,8 @@
  * Type-safe Bridge Tests
  */
 
-import { createTypedSender, TypedBridge, validatePayload } from './typed-bridge';
 import type { TypedSendToHost } from '../types';
+import { createTypedSender, TypedBridge, validatePayload } from './typed-bridge';
 
 describe('Type-safe Bridge', () => {
   describe('createTypedSender', () => {
