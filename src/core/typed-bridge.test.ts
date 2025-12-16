@@ -6,6 +6,16 @@ import type { TypedSendToHost } from '../types';
 import { createTypedSender, TypedBridge, validatePayload } from './typed-bridge';
 
 describe('Type-safe Bridge', () => {
+  let originalWarn: typeof console.warn;
+
+  beforeEach(() => {
+    originalWarn = console.warn;
+  });
+
+  afterEach(() => {
+    console.warn = originalWarn;
+  });
+
   describe('createTypedSender', () => {
     it('should create a typed sender wrapper', () => {
       const messages: Array<{ event: string; payload: unknown }> = [];
@@ -24,7 +34,6 @@ describe('Type-safe Bridge', () => {
 
     it('should handle missing sendToHost gracefully', () => {
       const warnings: unknown[] = [];
-      const originalWarn = console.warn;
       console.warn = (...args) => warnings.push(args);
 
       const send = createTypedSender(undefined);
@@ -32,8 +41,6 @@ describe('Type-safe Bridge', () => {
 
       expect(warnings.length).toBeGreaterThanOrEqual(1);
       expect(JSON.stringify(warnings)).toContain('sendToHost not available');
-
-      console.warn = originalWarn;
     });
   });
 
@@ -79,15 +86,12 @@ describe('Type-safe Bridge', () => {
 
     it('should handle missing sendToHost', () => {
       const warnings: unknown[] = [];
-      const originalWarn = console.warn;
       console.warn = (...args) => warnings.push(args);
 
       const bridgeWithoutHost = new TypedBridge(undefined);
       bridgeWithoutHost.send('askit:toast:show', ['Test']);
 
       expect(warnings.length).toBe(1);
-
-      console.warn = originalWarn;
     });
   });
 
