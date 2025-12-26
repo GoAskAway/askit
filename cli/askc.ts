@@ -3,24 +3,49 @@
 import { watch, type FSWatcher } from 'node:fs';
 import { readdir, stat } from 'node:fs/promises';
 
+import {
+  validateDescription,
+  validateJsPathMaybe,
+  validateName,
+  validateSemver,
+} from './manifest.validate';
+
 type JsonValue = null | boolean | number | string | JsonValue[] | { [k: string]: JsonValue };
 
 type Manifest = {
+  /** App unique name (PascalCase recommended) */
   name: string;
-  version?: string;
-  description?: string;
+  /** Semver (x.y.z) */
+  version: string;
+  /** Human readable description */
+  description: string;
+  /** Optional author/team */
+  author?: string;
+
   contract?: {
     name: string;
     version: number;
   };
+
+  /** Permission declarations (reserved for future host enforcement) */
   permissions?: string[];
+
   integrity?: {
     algorithm: 'sha256';
     files: Record<string, string>;
   };
+
+  /** Layout configuration (Canvas spec) */
   layout?: {
-    unified?: string;
+    leftPanel?: string;
+    rightPanel?: string;
     rightPanelDefaultVisible?: boolean;
+
+    /**
+     * Internal build artifact name used by askc/rill host.
+     * Defaults to 'unified-app.js' when omitted.
+     */
+    unified?: string;
   };
 };
 
@@ -51,6 +76,39 @@ const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
 const DEFAULT_CONTRACT = { name: 'ask', version: 1 } as const;
+
+function validateManifest(manifest: Manifest, projectRoot: string | null): void {
+  validateName(manifest.name);
+  validateSemver(manifest.version);
+  validateDescription(manifest.description);
+
+  validateJsPathMaybe(manifest.layout?.leftPanel, 'layout.leftPanel');
+  validateJsPathMaybe(manifest.layout?.rightPanel, 'layout.rightPanel');
+
+  // If building locally, ensure declared panel scripts exist when provided.
+  if (projectRoot) {
+    const root = projectRoot;
+    const checkFileExists = async (rel: string): Promise<boolean> => {
+      try {
+        const st = await stat(joinPath(root, rel));
+        return st.isFile();
+      } catch {
+        return false;
+      }
+    };
+
+    void (async () => {
+      if (manifest.layout?.leftPanel) {
+        const ok = await checkFileExists(manifest.layout.leftPanel);
+        if (!ok) throw new Error(`layout.leftPanel file not found: ${manifest.layout.leftPanel}`);
+      }
+      if (manifest.layout?.rightPanel) {
+        const ok = await checkFileExists(manifest.layout.rightPanel);
+        if (!ok) throw new Error(`layout.rightPanel file not found: ${manifest.layout.rightPanel}`);
+      }
+    })();
+  }
+}
 
 function toHex(buf: ArrayBuffer): string {
   const view = new Uint8Array(buf);
@@ -165,8 +223,10 @@ async function cmdInit(args: string[], flags: Map<string, string | boolean>): Pr
     contract: DEFAULT_CONTRACT,
     permissions: [],
     layout: {
+      leftPanel: 'menu.js',
+      rightPanel: 'ext.js',
+      rightPanelDefaultVisible: false,
       unified: 'unified-app.js',
-      rightPanelDefaultVisible: true,
     },
   };
 
@@ -214,15 +274,15 @@ function buildAutoRenderFooter(): string {
 ;(function(){
   if(typeof __sendToHost!=="function"||typeof __RillGuest==="undefined") return;
   try{
-    var React=typeof require==="function"?require("react"):(typeof globalThis!=="undefined"?globalThis.React:null);
+    var React=globalThis.React;
     if(!React){console.error("[rill] React not found, cannot auto-render");return;}
-    var Reconciler=typeof require==="function"?require("rill/reconciler"):null;
-    if(!Reconciler||!Reconciler.render){console.error("[rill] Reconciler not found, cannot auto-render");return;}
+    var RillLet=globalThis.RillLet;
+    if(!RillLet||!RillLet.render){console.error("[rill] RillLet not found, cannot auto-render");return;}
     var Comp=typeof __RillGuest==="function"?__RillGuest:(__RillGuest.default||__RillGuest);
     if(!Comp||typeof Comp!=="function"){console.warn("[rill] No valid component found in guest");return;}
     var el=React.createElement(Comp);
     console.log("[rill] Auto-rendering guest component");
-    Reconciler.render(el,__sendToHost);
+    RillLet.render(el,__sendToHost);
   }catch(e){console.error("[rill] Auto-render failed:",e);}
 })();`;
 }
@@ -233,6 +293,7 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
 
   const manifestPath = joinPath(project, 'manifest.json');
   const manifest = await readJson<Manifest>(manifestPath);
+  validateManifest(manifest, project);
   if (!manifest.contract) manifest.contract = DEFAULT_CONTRACT;
   const unifiedName = manifest.layout?.unified ?? 'unified-app.js';
 
@@ -251,9 +312,7 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
     '-e',
     'react/jsx-runtime',
     '-e',
-    'rill/reconciler',
-    '-e',
-    'rill/sdk',
+    '@rill/let',
   ];
 
   await run(
@@ -300,6 +359,8 @@ async function cmdVerify(args: string[]): Promise<void> {
 
   const manifestText = await runCapture(['unzip', '-p', filePath, 'manifest.json']);
   const manifest = JSON.parse(manifestText) as Manifest;
+  // verify should validate manifest structure as well
+  validateManifest(manifest, null);
   const unifiedName = manifest.layout?.unified ?? null;
   if (!unifiedName) throw new Error('manifest.json 缺少 layout.unified');
 
