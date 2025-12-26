@@ -287,6 +287,18 @@ function buildAutoRenderFooter(): string {
 })();`;
 }
 
+/**
+ * External modules and their global variable names
+ * In JSC sandbox, these are provided as globalThis.React, etc.
+ */
+const EXTERNALS_MAP: Record<string, string> = {
+  react: 'React',
+  'react/jsx-runtime': 'ReactJSXRuntime',
+  'react/jsx-dev-runtime': 'ReactJSXDevRuntime',
+  'react-native': 'ReactNative',
+  '@rill/let': 'RillLet',
+};
+
 async function cmdBuild(args: string[], flags: Map<string, string | boolean>): Promise<void> {
   const project = getFlag(flags, 'project') ?? process.cwd();
   const out = getFlag(flags, 'out');
@@ -304,23 +316,22 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
   const rawOut = joinPath(distDir, `${unifiedName}.raw.js`);
   const finalOut = joinPath(distDir, unifiedName);
 
-  const externals = [
-    '-e',
-    'react',
-    '-e',
-    'react-native',
-    '-e',
-    'react/jsx-runtime',
-    '-e',
-    '@rill/let',
-  ];
+  const externals = Object.keys(EXTERNALS_MAP).flatMap((mod) => ['-e', mod]);
 
   await run(
     ['bun', 'build', '--format=cjs', '--target=browser', '--outfile', rawOut, ...externals, entry],
     { cwd: project }
   );
 
-  const raw = await Bun.file(rawOut).text();
+  let raw = await Bun.file(rawOut).text();
+
+  // Transform external require() calls to global variable references
+  // In JSC sandbox, require("react") must become React (the global)
+  for (const [mod, globalName] of Object.entries(EXTERNALS_MAP)) {
+    const requirePattern = new RegExp(`require\\(["']${mod.replace('/', '\\/')}["']\\)`, 'g');
+    raw = raw.replace(requirePattern, globalName);
+  }
+
   const header =
     `// built by askc-cli (bun)\n` +
     `var module={exports:{}};\n` +
