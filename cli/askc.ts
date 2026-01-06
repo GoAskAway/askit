@@ -309,6 +309,10 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
   if (!manifest.contract) manifest.contract = DEFAULT_CONTRACT;
   const unifiedName = manifest.layout?.unified ?? 'unified-app.js';
 
+  await run(['npm', 'run', 'build'], { cwd: project });
+  console.log('👌 bundle: 实际加载脚本')
+  return;
+
   const entry = joinPath(project, 'src', 'unified-app.tsx');
   const distDir = joinPath(project, 'dist');
   await run(['mkdir', '-p', distDir]);
