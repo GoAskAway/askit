@@ -6,7 +6,7 @@
  */
 
 // APIs (Guest implementations)
-export { EventEmitter, Haptic, Toast } from './api/index.guest';
+export { EventEmitter, Haptic, Toast, useHttp, useHostApi } from './api/index.guest';
 // Types (same as host for consistent API)
 export type {
   BaseProps,
