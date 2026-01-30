@@ -4,11 +4,9 @@ import { fileURLToPath } from "node:url";
 
 type PrimitiveTypeName = "string" | "number" | "boolean" | "unknown";
 
-type FieldTypeSpec = `${PrimitiveTypeName}` | `${PrimitiveTypeName}?`;
-
 type ContractsEventSpec = {
   summary?: string;
-  payload?: Record<string, FieldTypeSpec>;
+  payload?: Record<string, any>;
 };
 
 type AskContractsSpecV1 = {
@@ -21,44 +19,87 @@ type AskContractsSpecV1 = {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const askitRoot = path.resolve(__dirname, "..");
 
-function parseFieldType(raw: unknown): { ts: PrimitiveTypeName; optional: boolean } {
-  if (typeof raw !== "string") return { ts: "unknown", optional: false };
-  const optional = raw.endsWith("?");
-  const base = (optional ? raw.slice(0, -1) : raw) as PrimitiveTypeName | string;
-  if (base === "string" || base === "number" || base === "boolean" || base === "unknown") {
-    return { ts: base, optional };
+/**
+ * 解析字段类型。支持:
+ * 1. 基础类型: "string", "number", "boolean", "unknown"
+ * 2. 可选标记: "string?"
+ * 3. Nullable 标记: "string | null"
+ */
+function parseFieldType(raw: unknown): { ts: string; optional: boolean; isNested: boolean; schema?: any } {
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    return { ts: "object", optional: false, isNested: true, schema: raw };
   }
-  return { ts: "unknown", optional };
+  
+  if (typeof raw !== "string") return { ts: "unknown", optional: false, isNested: false };
+
+  const optional = raw.endsWith("?");
+  let base = (optional ? raw.slice(0, -1) : raw).trim();
+  
+  const nullable = base.endsWith("| null");
+  if (nullable) {
+    base = base.replace("| null", "").trim();
+  }
+
+  const ts = (base === "string" || base === "number" || base === "boolean" || base === "unknown") 
+    ? base 
+    : "unknown";
+
+  return { 
+    ts: nullable ? `${ts} | null` : ts, 
+    optional, 
+    isNested: false 
+  };
 }
 
+/**
+ * 渲染 TypeScript 类型
+ */
 function renderPayloadType(payload: unknown): string {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return "unknown";
   const keys = Object.keys(payload).sort();
   const fields = keys.map((k) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { ts, optional } = parseFieldType((payload as any)[k]);
-    return `${JSON.stringify(k)}${optional ? "?:" : ":"} ${ts};`;
+    let fieldName = k;
+    let optionalKey = false;
+    // 支持在 Key 上加 ? 表示可选
+    if (k.endsWith('?')) {
+      fieldName = k.slice(0, -1);
+      optionalKey = true;
+    }
+
+    const raw = (payload as any)[k];
+    const { ts, optional, isNested, schema } = parseFieldType(raw);
+    const finalOptional = optionalKey || optional;
+    const typeStr = isNested ? renderPayloadType(schema) : ts;
+    
+    return `${JSON.stringify(fieldName)}${finalOptional ? "?:" : ":"} ${typeStr};`;
   });
   return `{ ${fields.join(" ")} }`;
 }
 
-function renderPayloadMap(events: Record<string, ContractsEventSpec>): string {
-  const names = Object.keys(events).sort();
-  const lines = names.map((name) => {
-    const evt = events[name];
-    const payloadType = renderPayloadType(evt?.payload);
-    return `  ${JSON.stringify(name)}: ${payloadType};`;
-  });
-  return `{\n${lines.join("\n")}\n}`;
-}
-
+/**
+ * 渲染运行时 Schema
+ */
 function renderPayloadSchema(payload: unknown): string {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return "{}";
   const keys = Object.keys(payload).sort();
   const fields = keys.map((k) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { ts, optional } = parseFieldType((payload as any)[k]);
-    return `${JSON.stringify(k)}: [${JSON.stringify(ts)}, ${optional}] as const`;
+    let fieldName = k;
+    let optionalKey = false;
+    if (k.endsWith('?')) {
+      fieldName = k.slice(0, -1);
+      optionalKey = true;
+    }
+
+    const raw = (payload as any)[k];
+    const { ts, optional, isNested, schema } = parseFieldType(raw);
+    const finalOptional = optionalKey || optional;
+    
+    const value = isNested 
+      ? renderPayloadSchema(schema) 
+      : JSON.stringify(ts);
+    
+    // 统一格式为 [typeOrSchema, optional]
+    return `${JSON.stringify(fieldName)}: [${value}, ${finalOptional}] as const`;
   });
   return `{ ${fields.join(", ")} }`;
 }
@@ -99,7 +140,7 @@ async function main(): Promise<void> {
  * 由脚本自动生成，请勿手改。
  *
  * 来源：${path.relative(askitRoot, specPath)}
- * 生成：bun run ${path.relative(askitRoot, path.resolve(__dirname, "generate-contracts.ts"))}
+ * 生成：bun run scripts/generate-contracts.ts
  */
 
 export const ASK_CONTRACT_NAME = ${JSON.stringify(spec.name)} as const;
@@ -108,12 +149,16 @@ export const ASK_CONTRACT_VERSION = ${JSON.stringify(spec.version)} as const;
 export type AskContractName = typeof ASK_CONTRACT_NAME;
 export type AskContractVersion = typeof ASK_CONTRACT_VERSION;
 
-export type HostToGuestEventPayloads = ${renderPayloadMap(spec.hostToGuest ?? {})};
+export type HostToGuestEventPayloads = {
+${Object.keys(spec.hostToGuest ?? {}).sort().map(name => `  ${JSON.stringify(name)}: ${renderPayloadType(spec.hostToGuest[name]?.payload)};`).join('\n')}
+};
 export type HostToGuestEventName = keyof HostToGuestEventPayloads;
 ${renderConstNames(hostToGuestNames, "HOST_TO_GUEST_EVENT_NAMES")}
 ${renderTypeGuard("HOST_TO_GUEST_EVENT_NAMES", "HostToGuestEventName", "isHostToGuestEventName")}
 
-export type GuestToHostEventPayloads = ${renderPayloadMap(spec.guestToHost ?? {})};
+export type GuestToHostEventPayloads = {
+${Object.keys(spec.guestToHost ?? {}).sort().map(name => `  ${JSON.stringify(name)}: ${renderPayloadType(spec.guestToHost[name]?.payload)};`).join('\n')}
+};
 export type GuestToHostEventName = keyof GuestToHostEventPayloads;
 ${renderConstNames(guestToHostNames, "GUEST_TO_HOST_EVENT_NAMES")}
 ${renderTypeGuard("GUEST_TO_HOST_EVENT_NAMES", "GuestToHostEventName", "isGuestToHostEventName")}
@@ -128,20 +173,18 @@ export type GuestToHostEvent<E extends GuestToHostEventName = GuestToHostEventNa
   payload: GuestToHostEventPayloads[E];
 };
 
-type PrimitiveTypeName = ${JSON.stringify(["string", "number", "boolean", "unknown"]).replace(/"/g, "'")}[number];
-type FieldSchema = readonly [type: PrimitiveTypeName, optional: boolean];
-
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function validatePayloadAgainstSchema(payload: unknown, schema: Record<string, FieldSchema>): boolean {
+function validatePayloadAgainstSchema(payload: unknown, schema: Record<string, any>): boolean {
   if (!isPlainObject(payload)) return false;
   const obj = payload as Record<string, unknown>;
   for (const key of Object.keys(schema)) {
     const field = schema[key];
-    if (!field) continue;
-    const [type, optional] = field;
+    if (!field || !Array.isArray(field)) continue;
+
+    const [typeOrSchema, optional] = field as [any, boolean];
 
     if (!(key in obj)) {
       if (!optional) return false;
@@ -154,8 +197,23 @@ function validatePayloadAgainstSchema(payload: unknown, schema: Record<string, F
       continue;
     }
 
-    if (type === 'unknown') continue;
-    if (typeof value !== type) return false;
+    // 递归处理嵌套对象
+    if (typeof typeOrSchema === 'object' && typeOrSchema !== null) {
+      if (!validatePayloadAgainstSchema(value, typeOrSchema)) return false;
+      continue;
+    }
+
+    const typeStr = typeOrSchema as string;
+    const isNullable = typeStr.includes('| null');
+    const baseType = typeStr.replace('| null', '').trim();
+
+    if (value === null) {
+      if (!isNullable) return false;
+      continue;
+    }
+
+    if (baseType === 'unknown') continue;
+    if (typeof value !== baseType) return false;
   }
   return true;
 }
@@ -165,7 +223,7 @@ export function validateHostToGuestPayload<E extends HostToGuestEventName>(
   name: E,
   payload: unknown
 ): payload is HostToGuestEventPayloads[E] {
-  const schema = (HOST_TO_GUEST_PAYLOAD_SCHEMA as Record<string, Record<string, FieldSchema>>)[name];
+  const schema = (HOST_TO_GUEST_PAYLOAD_SCHEMA as Record<string, Record<string, any>>)[name];
   if (!schema) return false;
   return validatePayloadAgainstSchema(payload, schema);
 }
@@ -175,21 +233,18 @@ export function validateGuestToHostPayload<E extends GuestToHostEventName>(
   name: E,
   payload: unknown
 ): payload is GuestToHostEventPayloads[E] {
-  const schema = (GUEST_TO_HOST_PAYLOAD_SCHEMA as Record<string, Record<string, FieldSchema>>)[name];
+  const schema = (GUEST_TO_HOST_PAYLOAD_SCHEMA as Record<string, Record<string, any>>)[name];
   if (!schema) return false;
   return validatePayloadAgainstSchema(payload, schema);
 }
-
 `;
 
   await mkdir(path.dirname(outPath), { recursive: true });
   await writeFile(outPath, content, "utf8");
-  // eslint-disable-next-line no-console
   console.log(`[askit] contracts generated: ${path.relative(process.cwd(), outPath)}`);
 }
 
 main().catch((err) => {
-  // eslint-disable-next-line no-console
   console.error(err);
   process.exitCode = 1;
 });

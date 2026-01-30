@@ -576,7 +576,11 @@ async function cmdDev(args: string[], flags: Map<string, string | boolean>): Pro
               color = COLORS.cyan;
               prefix = 'ℹ️ ';
             }
-            console.log(`${color}[${time}] ${prefix} ${msg}${COLORS.reset}`);
+            if (msg.length > 200 && level !== 'error') {
+              console.log(`${color}[${time}] ${prefix} [>>> Folding] ${msg.slice(0, 200)}${COLORS.reset}`);
+            } else {
+              console.log(`${color}[${time}] ${prefix} ${msg}${COLORS.reset}`);
+            }
           } catch {
             console.log(`[RAW] ${body}`);
           }
@@ -609,7 +613,7 @@ async function cmdDev(args: string[], flags: Map<string, string | boolean>): Pro
     }
     console.log(`\n🚇 启动 Metro: ${hostProject}`);
     const rnBin = joinPath(hostProject, 'node_modules/.bin/react-native');
-    metroProc = Bun.spawn(['node', rnBin, 'start', '--verbose'], {
+    metroProc = Bun.spawn(['node', rnBin, 'start', '--verbose', '--reset-cache'], {
       cwd: hostProject,
       stdout: 'inherit',
       stderr: 'inherit',

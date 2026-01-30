@@ -38,12 +38,12 @@
     "format:check": "biome format src",
     "check": "biome check --write src",
     "check:ci": "biome ci src",
-    "prepublishOnly": "bun run typecheck && bun run check:ci && bun test"
+    "prepublishOnly": "bun run typecheck && bun run check:ci && bun test",
+    "runrunrun": "bun run askc dev --project /Users/toupitutuetoudada/Desktop/work/github/ipad/askaway-ipad/Subsystem/askc-app-examples/counterapp --metro --host-project  /Users/toupitutuetoudada/Desktop/work/github/ipad/askaway-ipad/Subsystem/ --log-server"
   },
   "peerDependencies": {
     "react": "^19.0.0",
-    "react-native": "^0.79.0",
-    "rill": "workspace:*"
+    "react-native": "^0.79.0"
   },
   "peerDependenciesMeta": {
     "react-native": {
@@ -73,5 +73,8 @@
   ],
   "engines": {
     "bun": ">=1.0.0"
+  },
+  "dependencies": {
+    "commander": "14.0.2"
   }
 }

@@ -2,6 +2,7 @@
   "name": "ask",
   "version": 1,
   "hostToGuest": {
+    "// --- 系统内置 ---": {},
     "HOST_VISIBILITY": {
       "summary": "Host 告知 Guest 当前 tab 是否可见，用于 cooperative sleep/resume（降 CPU）。",
       "payload": {
@@ -17,9 +18,28 @@
         "applied": "number",
         "total": "number"
       }
+    },
+    "// --- 标准原生能力 ---": {},
+    "SPEECH_RESPONSE": {
+      "summary": "Host 返回语音操作执行结果",
+      "payload": {
+        "requestId": "string",
+        "success": "boolean",
+        "error": "unknown?"
+      }
+    },
+    "HTTP_RESPONSE": {
+      "summary": "Host 返回 HTTP 请求结果给 Guest",
+      "payload": {
+        "requestId": "string",
+        "success": "boolean",
+        "data": "unknown",
+        "status": "number"
+      }
     }
   },
   "guestToHost": {
+    "// --- 系统内置 ---": {},
     "ASKIT_TOAST_SHOW": {
       "summary": "Internal: Guest requests host to show toast.",
       "payload": {
@@ -40,7 +60,25 @@
         "tabId": "string?",
         "reason": "string?"
       }
+    },
+    "// --- 标准原生能力 ---": {},
+    "SPEECH_REQUEST": {
+      "summary": "Guest 请求语音合成或控制",
+      "payload": {
+        "requestId": "string",
+        "text": "string?",
+        "action": "'speak' | 'stop' | 'pause' | 'resume'"
+      }
+    },
+    "HTTP_REQUEST": {
+      "summary": "Guest 发起 HTTP 请求",
+      "payload": {
+        "requestId": "string",
+        "url": "string",
+        "method": "string?",
+        "headers": "unknown?",
+        "body": "unknown?"
+      }
     }
   }
 }
-
