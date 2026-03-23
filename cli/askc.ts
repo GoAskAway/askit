@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 
 import { watch, type FSWatcher } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
+import { mkdir, readdir, rm, stat } from 'node:fs/promises';
 
 import {
   validateDescription,
@@ -77,7 +77,7 @@ const textEncoder = new TextEncoder();
 
 const DEFAULT_CONTRACT = { name: 'ask', version: 1 } as const;
 
-function validateManifest(manifest: Manifest, projectRoot: string | null): void {
+export function validateManifest(manifest: Manifest, projectRoot: string | null): void {
   validateName(manifest.name);
   validateSemver(manifest.version);
   validateDescription(manifest.description);
@@ -117,13 +117,13 @@ function toHex(buf: ArrayBuffer): string {
   return out;
 }
 
-async function sha256Utf8(text: string): Promise<string> {
+export async function sha256Utf8(text: string): Promise<string> {
   const bytes = textEncoder.encode(text);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return toHex(digest);
 }
 
-function joinPath(...parts: string[]): string {
+export function joinPath(...parts: string[]): string {
   return parts
     .filter(Boolean)
     .join('/')
@@ -309,48 +309,31 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
   if (!manifest.contract) manifest.contract = DEFAULT_CONTRACT;
   const unifiedName = manifest.layout?.unified ?? 'unified-app.js';
 
+  // 1. 触发项目内部构建（例如执行 rill cli 生成 app.js）
   await run(['npm', 'run', 'build'], { cwd: project });
-  console.log('👌 bundle: 实际加载脚本')
-  return;
 
-  const entry = joinPath(project, 'src', 'unified-app.tsx');
   const distDir = joinPath(project, 'dist');
-  await run(['mkdir', '-p', distDir]);
+  await mkdir(distDir, { recursive: true });
 
-  const rawOut = joinPath(distDir, `${unifiedName}.raw.js`);
+  // 2. 将内部构建生成的 app.js 作为统一下发的文件
+  const appJsPath = joinPath(project, 'app.js');
   const finalOut = joinPath(distDir, unifiedName);
 
-  const externals = Object.keys(EXTERNALS_MAP).flatMap((mod) => ['-e', mod]);
-
-  await run(
-    ['bun', 'build', '--format=cjs', '--target=browser', '--outfile', rawOut, ...externals, entry],
-    { cwd: project }
-  );
-
-  let raw = await Bun.file(rawOut).text();
-
-  // Transform external require() calls to global variable references
-  // In JSC sandbox, require("react") must become React (the global)
-  for (const [mod, globalName] of Object.entries(EXTERNALS_MAP)) {
-    const requirePattern = new RegExp(`require\\(["']${mod.replace('/', '\\/')}["']\\)`, 'g');
-    raw = raw.replace(requirePattern, globalName);
+  let st: Awaited<ReturnType<typeof stat>>;
+  try {
+    st = await stat(appJsPath);
+  } catch {
+    throw new Error(`构建失败：未找到生成的 app.js 文件。\n请确保 package.json 的 build 脚本生成了根目录下的 app.js`);
+  }
+  if (!st.isFile()) {
+    throw new Error(`构建失败：${appJsPath} 不是文件`);
   }
 
-  const header =
-    `// built by askc-cli (bun)\n` +
-    `var module={exports:{}};\n` +
-    `var exports=module.exports;\n`;
-  const footer =
-    `\nvar __RillGuest=(module.exports&&module.exports.default)?module.exports.default:module.exports;\n` +
-    buildAutoRenderFooter() +
-    `\n`;
+  const appJsRaw = await Bun.file(appJsPath).text();
+  await Bun.write(finalOut, appJsRaw);
 
-  await Bun.write(finalOut, header + raw + footer);
-  await run(['rm', '-f', rawOut]);
-
-  // 写入完整性信息（sha256），用于 verify/宿主校验
-  const finalText = await Bun.file(finalOut).text();
-  const digest = await sha256Utf8(finalText);
+  // 3. 写入完整性信息（sha256），用于 verify/宿主校验
+  const digest = await sha256Utf8(appJsRaw);
   const integrityKey = `dist/${unifiedName}`;
   const prevIntegrity = manifest.integrity?.files ?? {};
   manifest.integrity = {
@@ -359,11 +342,13 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
   };
   await Bun.write(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
 
+  // 4. 打包文件为 .askc
   const outFile = out ?? joinPath(project, `${manifest.name}.askc`);
-  await run(['rm', '-f', outFile]);
+  await rm(outFile, { force: true });
+  // 依赖系统 zip 命令（unix）；Windows 需另装 zip 或改用跨平台 zip 库
   await run(['zip', '-r', '-X', outFile, 'manifest.json', 'dist'], { cwd: project });
 
-  console.log('✅ build 完成');
+  console.log('✅ build 完成 (基于项目内部 app.js 构建)');
   console.log(`- bundle: ${finalOut}`);
   console.log(`- package: ${outFile}`);
 }
@@ -564,7 +549,7 @@ async function cmdDev(args: string[], flags: Map<string, string | boolean>): Pro
             const level = data.level || 'log';
             const msg = data.msg || '';
             const time = new Date().toLocaleTimeString();
-            let color = COLORS.green;
+            let color: string = COLORS.green;
             let prefix = '📱';
             if (level === 'error') {
               color = COLORS.red;
@@ -576,7 +561,12 @@ async function cmdDev(args: string[], flags: Map<string, string | boolean>): Pro
               color = COLORS.cyan;
               prefix = 'ℹ️ ';
             }
-            console.log(`${color}[${time}] ${prefix} ${msg}${COLORS.reset}`);
+            // 非 error 的超长消息截断到 1400 字符，避免日志刷屏
+            if (level !== 'error' && msg.length > 1400) {
+              console.log(`${color}[${time}] ${prefix} [truncated] ${msg.slice(0, 1400)}${COLORS.reset}`);
+            } else {
+              console.log(`${color}[${time}] ${prefix} ${msg}${COLORS.reset}`);
+            }
           } catch {
             console.log(`[RAW] ${body}`);
           }
@@ -735,7 +725,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err) => {
-  console.error(String(err?.message ?? err));
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error(String(err?.message ?? err));
+    process.exit(1);
+  });
+}
