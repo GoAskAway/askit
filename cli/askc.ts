@@ -299,7 +299,10 @@ const EXTERNALS_MAP: Record<string, string> = {
   '@rill/let': 'RillLet',
 };
 
-async function cmdBuild(args: string[], flags: Map<string, string | boolean>): Promise<void> {
+/**
+ * @deprecated 该方法目前已废弃，保留用于参考
+ */
+async function cmdBuildDeprecated(args: string[], flags: Map<string, string | boolean>): Promise<void> {
   const project = getFlag(flags, 'project') ?? process.cwd();
   const out = getFlag(flags, 'out');
 
@@ -311,7 +314,7 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
 
   await run(['npm', 'run', 'build'], { cwd: project });
   console.log('👌 bundle: 实际加载脚本')
-  return;
+  // return;
 
   const entry = joinPath(project, 'src', 'unified-app.tsx');
   const distDir = joinPath(project, 'dist');
@@ -364,6 +367,56 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
   await run(['zip', '-r', '-X', outFile, 'manifest.json', 'dist'], { cwd: project });
 
   console.log('✅ build 完成');
+  console.log(`- bundle: ${finalOut}`);
+  console.log(`- package: ${outFile}`);
+}
+
+async function cmdBuild(args: string[], flags: Map<string, string | boolean>): Promise<void> {
+  const project = getFlag(flags, 'project') ?? process.cwd();
+  const out = getFlag(flags, 'out');
+
+  const manifestPath = joinPath(project, 'manifest.json');
+  const manifest = await readJson<Manifest>(manifestPath);
+  validateManifest(manifest, project);
+  if (!manifest.contract) manifest.contract = DEFAULT_CONTRACT;
+  const unifiedName = manifest.layout?.unified ?? 'unified-app.js';
+
+  // 1. 触发项目内部构建（例如执行 rill cli 生成 app.js）
+  await run(['npm', 'run', 'build'], { cwd: project });
+
+  const distDir = joinPath(project, 'dist');
+  await run(['mkdir', '-p', distDir]);
+
+  // 2. 将内部构建生成的 app.js 作为统一下发的文件
+  const appJsPath = joinPath(project, 'app.js');
+  const finalOut = joinPath(distDir, unifiedName);
+
+  try {
+    const st = await stat(appJsPath);
+    if (!st.isFile()) throw new Error();
+  } catch {
+    throw new Error(`构建失败：未找到生成的 app.js 文件。\n请确保 package.json 的 build 脚本生成了根目录下的 app.js`);
+  }
+
+  const appJsRaw = await Bun.file(appJsPath).text();
+  await Bun.write(finalOut, appJsRaw);
+
+  // 3. 写入完整性信息（sha256），用于 verify/宿主校验
+  const digest = await sha256Utf8(appJsRaw);
+  const integrityKey = `dist/${unifiedName}`;
+  const prevIntegrity = manifest.integrity?.files ?? {};
+  manifest.integrity = {
+    algorithm: 'sha256',
+    files: { ...prevIntegrity, [integrityKey]: digest },
+  };
+  await Bun.write(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+
+  // 4. 打包文件为 .askc
+  const outFile = out ?? joinPath(project, `${manifest.name}.askc`);
+  await run(['rm', '-f', outFile]);
+  await run(['zip', '-r', '-X', outFile, 'manifest.json', 'dist'], { cwd: project });
+
+  console.log('✅ build 完成 (基于项目内部 app.js 构建)');
   console.log(`- bundle: ${finalOut}`);
   console.log(`- package: ${outFile}`);
 }
@@ -564,7 +617,7 @@ async function cmdDev(args: string[], flags: Map<string, string | boolean>): Pro
             const level = data.level || 'log';
             const msg = data.msg || '';
             const time = new Date().toLocaleTimeString();
-            let color = COLORS.green;
+            let color: string = COLORS.green;
             let prefix = '📱';
             if (level === 'error') {
               color = COLORS.red;
@@ -577,7 +630,7 @@ async function cmdDev(args: string[], flags: Map<string, string | boolean>): Pro
               prefix = 'ℹ️ ';
             }
             if (msg.length > 200 && level !== 'error') {
-              console.log(`${color}[${time}] ${prefix} [>>> Folding] ${msg.slice(0, 200)}${COLORS.reset}`);
+              console.log(`${color}[${time}] ${prefix} [>>> Folding] ${msg.slice(0, 1400)}${COLORS.reset}`);
             } else {
               console.log(`${color}[${time}] ${prefix} ${msg}${COLORS.reset}`);
             }
