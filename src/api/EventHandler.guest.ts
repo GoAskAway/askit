@@ -12,7 +12,7 @@ const pendingRequests = new Map<string, (res: any) => void>();
  * @param requestEvent Guest 发送给 Host 的请求事件 (如: 'HTTP_REQUEST')
  * @param responseEvent Host 返回给 Guest 的响应事件 (如: 'HTTP_RESPONSE')
  */
-export function useHostApi<
+export function useEventBridge<
   TReqName extends keyof GuestToHostEventPayloads,
   TResName extends keyof HostToGuestEventPayloads
 >(

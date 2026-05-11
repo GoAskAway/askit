@@ -6,7 +6,7 @@
  */
 
 // APIs
-export { EventEmitter, Haptic, Toast } from './api/index.host';
+export { EventEmitter, Haptic, Toast, EventHandler, HostHttpHandler } from './api/index.host';
 // Types
 export type {
   BaseProps,
@@ -45,11 +45,13 @@ export {
   ThemeView,
   UserAvatar,
   MyTouchableOpacity,
-   DropdownMenu,
+  DropdownMenu,
   DropdownMenuItem,
   DropdownMenuText,
   DropdownMenuSubText,
 } from './ui/index.host';
+
+export type { HandlerRegistry } from './api/index.host';
 
 // Panel utilities (Host-only)
 export { extractPanels } from './ui/Panel/extractPanels.host';
