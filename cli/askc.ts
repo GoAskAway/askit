@@ -401,6 +401,26 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
   const appJsRaw = await Bun.file(appJsPath).text();
   await Bun.write(finalOut, appJsRaw);
 
+  // 2.5 将构建产物中的图片等非 JS 资产拷贝到 dist/
+  const assetExts = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
+  const projectFiles = await readdir(project);
+  let assetCount = 0;
+  for (const file of projectFiles) {
+    const dotIdx = file.lastIndexOf('.');
+    if (dotIdx === -1) continue;
+    const ext = file.substring(dotIdx).toLowerCase();
+    if (!assetExts.includes(ext)) continue;
+    const srcPath = joinPath(project, file);
+    const st = await stat(srcPath);
+    if (!st.isFile()) continue;
+    const destPath = joinPath(distDir, file);
+    await run(['cp', srcPath, destPath]);
+    assetCount++;
+  }
+  if (assetCount > 0) {
+    console.log(`- assets: ${assetCount} 个资源文件已拷贝到 dist/`);
+  }
+
   // 3. 写入完整性信息（sha256），用于 verify/宿主校验
   const digest = await sha256Utf8(appJsRaw);
   const integrityKey = `dist/${unifiedName}`;
@@ -416,8 +436,18 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
   await run(['rm', '-f', outFile]);
   await run(['zip', '-r', '-X', outFile, 'manifest.json', 'dist'], { cwd: project });
 
+  // 5. 清理中间产物：app.js、根目录图片资源、dist/ 目录
+  await run(['rm', '-f', appJsPath], { cwd: project });
+  for (const file of projectFiles) {
+    const dotIdx = file.lastIndexOf('.');
+    if (dotIdx === -1) continue;
+    const ext = file.substring(dotIdx).toLowerCase();
+    if (!assetExts.includes(ext)) continue;
+    await run(['rm', '-f', file], { cwd: project });
+  }
+  await run(['rm', '-rf', distDir]);
+
   console.log('✅ build 完成 (基于项目内部 app.js 构建)');
-  console.log(`- bundle: ${finalOut}`);
   console.log(`- package: ${outFile}`);
 }
 

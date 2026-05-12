@@ -5,6 +5,8 @@
 // Re-export types
 export type {
   ChatBubbleProps,
+  GlobalAlertButton,
+  GlobalAlertProps,
   // EngineMonitor
   // (Host-only UI, types are exported from ./ui/EngineMonitor)
   StepItem,
@@ -14,6 +16,7 @@ export type {
   UserAvatarProps,
 } from '../types';
 export { ChatBubble } from './ChatBubble/ChatBubble.host';
+export { GlobalAlert } from './GlobalAlert/GlobalAlert.host';
 export { EngineMonitorOverlay } from './EngineMonitor/EngineMonitor.host';
 export { PanelMarker } from './Panel/PanelMarker.host';
 export { StepList } from './StepList/StepList.host';

@@ -67,22 +67,6 @@ export class EventHandler {
         return res;
       },
     },
-
-    /**
-     * 获取应用信息
-     */
-    // GET_APP_INFO: {
-    //   responseEvent: 'SEND_APP_INFO',
-    //   handle: async (payload) => {
-    //     // 模拟获取应用信息的逻辑
-    //     const appInfo = {
-    //       name: 'AskIt',
-    //       version: '1.0.0',
-    //       requestId: payload.requestId,
-    //     };
-    //     return appInfo;
-    //   },
-    // },
   } satisfies HandlerRegistry;
 
   private static async handleKnownEvent<K extends keyof GuestToHostEventPayloads>(
@@ -131,7 +115,9 @@ export class EventHandler {
 
     if (!tabId) {
       console.warn('[EventHandler] No tabId provided, skipping event handler setup.');
-      return () => { /* no-op */ };
+      return () => {
+        /* no-op */
+      };
     }
 
     return engine.on('message', async (msg: { event: string; payload?: unknown }) => {

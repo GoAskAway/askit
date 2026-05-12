@@ -7,6 +7,8 @@
 // Re-export types (same types for both environments)
 export type {
   ChatBubbleProps,
+  GlobalAlertButton,
+  GlobalAlertProps,
   StepItem,
   StepListProps,
   StepStatus,
@@ -14,6 +16,7 @@ export type {
   UserAvatarProps,
 } from '../types';
 export { ChatBubble } from './ChatBubble/ChatBubble.guest';
+export { GlobalAlert } from './GlobalAlert/GlobalAlert.guest';
 export { Panel } from './Panel/Panel.guest';
 export { StepList } from './StepList/StepList.guest';
 export { ThemeView } from './ThemeView/ThemeView.guest';

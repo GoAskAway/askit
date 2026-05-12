@@ -56,6 +56,38 @@
         "success": "boolean",
         "error": "unknown?"
       }
+    },
+    "CLOSE_EXTENSION_RESULT": {
+      "summery": "Host 关闭拓展面板完成",
+      "payload": {
+        "requestId": "string",
+        "success": "boolean",
+        "error": "unknown?"
+      }
+    },
+    "LANGUAGE_LIST": {
+      "summary": "Host 返回语言列表",
+      "payload": {
+        "requestId": "string",
+        "languages": "unknown",
+        "current": "string"
+      }
+    },
+    "SET_APP_LANGUAGE_RESULT": {
+      "summary": "Host 返回设置语言结果",
+      "payload": {
+        "requestId": "string",
+        "success": "boolean",
+        "error": "unknown?"
+      }
+    },
+    "SEND_EMAIL_RESULT": {
+      "summary": "Host 返回发送邮件结果",
+      "payload": {
+        "requestId": "string",
+        "success": "boolean",
+        "error": "unknown?"
+      }
     }
   },
   "guestToHost": {
@@ -106,10 +138,37 @@
         "requestId": "string"
       }
     },
+    "GET_LANGUAGE_LIST": {
+      "summary": "Guest 请求获取语言列表",
+      "payload": {
+        "requestId": "string"
+      }
+    },
+    "SET_APP_LANGUAGE": {
+      "summary": "Guest 请求设置当前引用语言",
+      "payload": {
+        "requestId": "string",
+        "language": "string"
+      }
+    },
     "CLEAR_CHAT_HISTORY": {
       "summary": "Guest 请求清除对话记录",
       "payload": {
         "requestId": "string"
+      }
+    },
+    "CLOSE_EXTENSION": {
+      "summary": "Guest 请求关闭扩展",
+      "payload": {
+        "requestId": "string"
+      }
+    },
+    "SEND_EMAIL": {
+      "summary": "Guest 请求发送邮件",
+      "payload": {
+        "requestId": "string",
+        "to": "string",
+        "subject": "string"
       }
     }
   }

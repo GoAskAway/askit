@@ -242,6 +242,28 @@ export interface MyTouchableOpacityProps extends BaseProps {
 }
 
 // ============================================================================
+// GlobalAlert Component Types
+// ============================================================================
+
+export type GlobalAlertButtonVariant = 'primary';
+
+export interface GlobalAlertButton {
+  text: string;
+  onPress?: () => void;
+  style?: 'default' | 'cancel' | 'destructive';
+  variant?: GlobalAlertButtonVariant;
+}
+
+export interface GlobalAlertProps extends BaseProps {
+  visible: boolean;
+  title?: string;
+  message?: string;
+  buttons?: GlobalAlertButton[];
+  cancelable?: boolean;
+  onDismiss?: () => void;
+}
+
+// ============================================================================
 // Protocol Types (aligned to rill HostEvent model)
 // ============================================================================
 
