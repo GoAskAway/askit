@@ -48,4 +48,5 @@ export {
   DropdownMenuItem,
   DropdownMenuText,
   DropdownMenuSubText,
+  GlobalAlert
 } from './ui/index.guest';
