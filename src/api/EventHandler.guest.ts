@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useHostEvent, useSendToHost } from 'rill/let';
+import { useHostEvent, useSendToHost } from 'rill/guest';
 import { HostToGuestEventPayloads, GuestToHostEventPayloads } from 'askit/contracts';
 
 type RequestPayloadWithId = {

@@ -6,7 +6,7 @@
  */
 /* Auto-render (askc mode) */
 (function() {
-  if (typeof __sendToHost === 'function' && typeof globalThis.__RillGuest !== 'undefined') {
+  if (typeof __rill_sendBatch === 'function' && globalThis.__rill && globalThis.__rill.guest) {
     try {
       var React = globalThis.React;
       if (!React) {
@@ -20,7 +20,7 @@
         return;
       }
 
-      var GuestExport = globalThis.__RillGuest;
+      var GuestExport = globalThis.__rill.guest;
       var element;
 
       // Check for usePanels hook export (askc panel mode)
@@ -50,7 +50,7 @@
       }
 
       console.log('[askc] Auto-rendering guest');
-      RillReconciler.render(element, __sendToHost);
+      RillReconciler.render(element, __rill_sendBatch);
     } catch (error) {
       console.error('[askc] Auto-render failed:', error);
     }
