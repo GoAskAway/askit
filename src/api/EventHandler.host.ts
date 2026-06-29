@@ -1,6 +1,17 @@
 import type { GuestToHostEventPayloads, HostToGuestEventPayloads } from 'askit/contracts';
-import type { Engine } from 'rill';
 import { HostHttpHandler } from './Https.host';
+
+/**
+ * 本地 Engine 最小契约（structural）
+ * 只声明 EventHandler 实际依赖的方法，避免直接 import rill/host 触发对 rill 源码的类型扫描。
+ */
+type Engine = {
+  on(
+    event: 'message',
+    cb: (msg: { event: string; payload?: unknown }) => void | Promise<void>
+  ): () => void;
+  sendEvent(event: string, payload: unknown): void;
+};
 
 /**
  * 日志处理器接口，通常对应 DevToolsBridge.logMessage
