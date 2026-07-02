@@ -43,8 +43,12 @@ mock.module('react-native', () => ({
     ScrollView: 'Animated.ScrollView',
     Value: class {
       constructor(public _value: number) {}
-      setValue(value: number) { this._value = value; }
-      interpolate() { return this; }
+      setValue(value: number) {
+        this._value = value;
+      }
+      interpolate() {
+        return this;
+      }
     },
     timing: () => ({ start: (cb?: () => void) => cb?.() }),
     spring: () => ({ start: (cb?: () => void) => cb?.() }),

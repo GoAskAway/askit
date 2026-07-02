@@ -3,4 +3,3 @@
  */
 
 export type { MyTouchableOpacityProps } from '../../types';
-

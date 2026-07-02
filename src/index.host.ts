@@ -45,7 +45,7 @@ export {
   ThemeView,
   UserAvatar,
   MyTouchableOpacity,
-   DropdownMenu,
+  DropdownMenu,
   DropdownMenuItem,
   DropdownMenuText,
   DropdownMenuSubText,
