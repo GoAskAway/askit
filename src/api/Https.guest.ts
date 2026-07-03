@@ -1,6 +1,6 @@
 import type { HostToGuestEventPayloads } from 'askit/contracts';
 import { useCallback } from 'react';
-import { useHostApi } from './HostApi.guest';
+import { useEventBridge } from './EventHandler.guest';
 
 type HttpResult = HostToGuestEventPayloads['HTTP_RESPONSE'];
 export type HttpResponse<D> = Omit<HttpResult, 'data'> & { data: D };
@@ -12,7 +12,7 @@ type HttpHeaders = Record<string, string>;
  * data 类型由调用方泛型 D 指定（契约中 data 为 unknown）
  */
 export function useHttp() {
-  const { request } = useHostApi('HTTP_REQUEST', 'HTTP_RESPONSE');
+  const { request } = useEventBridge('HTTP_REQUEST', 'HTTP_RESPONSE');
 
   const get = useCallback(
     async <D>(requestId: string, url: string, headers?: HttpHeaders): Promise<HttpResponse<D>> => {

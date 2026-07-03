@@ -36,6 +36,26 @@
         "data": "unknown",
         "status": "number"
       }
+    },
+    "SEND_APP_INFO": {
+      "summary": "Host 返回当前应用信息",
+      "payload": {
+        "requestId": "string",
+        "appName": "string",
+        "logo": "string",
+        "languageContents": "unknown",
+        "favoriteCount": "number",
+        "usedCount": "number",
+        "author": "string"
+      }
+    },
+    "CLEAR_CHAT_HISTORY_RESULT": {
+      "summary": "Host 返回清除对话记录结果",
+      "payload": {
+        "requestId": "string",
+        "success": "boolean",
+        "error": "unknown?"
+      }
     }
   },
   "guestToHost": {
@@ -67,7 +87,7 @@
       "payload": {
         "requestId": "string",
         "text": "string?",
-        "action": "string"
+        "action": "'speak' | 'stop' | 'pause' | 'resume'"
       }
     },
     "HTTP_REQUEST": {
@@ -78,6 +98,18 @@
         "method": "string?",
         "headers": "unknown?",
         "body": "unknown?"
+      }
+    },
+    "GET_APP_INFO": {
+      "summary": "Guest 请求当前 应用信息",
+      "payload": {
+        "requestId": "string"
+      }
+    },
+    "CLEAR_CHAT_HISTORY": {
+      "summary": "Guest 请求清除对话记录",
+      "payload": {
+        "requestId": "string"
       }
     }
   }
