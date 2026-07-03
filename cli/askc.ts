@@ -332,6 +332,25 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
   const appJsRaw = await Bun.file(appJsPath).text();
   await Bun.write(finalOut, appJsRaw);
 
+  // 2.5 将构建产物中的图片等非 JS 资产拷贝到 dist/（不删根目录源图片，避免误删源文件）
+  const assetExts = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
+  const projectFiles = await readdir(project);
+  let assetCount = 0;
+  for (const file of projectFiles) {
+    const dotIdx = file.lastIndexOf('.');
+    if (dotIdx === -1) continue;
+    const ext = file.substring(dotIdx).toLowerCase();
+    if (!assetExts.includes(ext)) continue;
+    const srcPath = joinPath(project, file);
+    const fileSt = await stat(srcPath);
+    if (!fileSt.isFile()) continue;
+    await run(['cp', srcPath, joinPath(distDir, file)]);
+    assetCount++;
+  }
+  if (assetCount > 0) {
+    console.log(`- assets: ${assetCount} 个资源文件已拷贝到 dist/`);
+  }
+
   // 3. 写入完整性信息（sha256），用于 verify/宿主校验
   const digest = await sha256Utf8(appJsRaw);
   const integrityKey = `dist/${unifiedName}`;
@@ -347,6 +366,10 @@ async function cmdBuild(args: string[], flags: Map<string, string | boolean>): P
   await rm(outFile, { force: true });
   // 依赖系统 zip 命令（unix）；Windows 需另装 zip 或改用跨平台 zip 库
   await run(['zip', '-r', '-X', outFile, 'manifest.json', 'dist'], { cwd: project });
+
+  // 5. 清理中间产物：app.js、dist/ 目录
+  await rm(appJsPath, { force: true });
+  await rm(distDir, { recursive: true, force: true });
 
   console.log('✅ build 完成 (基于项目内部 app.js 构建)');
   console.log(`- bundle: ${finalOut}`);

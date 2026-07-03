@@ -20,6 +20,7 @@ mock.module('react-native', () => ({
   TextInput: 'TextInput',
   Switch: 'Switch',
   Button: 'Button',
+  Modal: 'Modal',
   StyleSheet: {
     create: <T extends Record<string, unknown>>(styles: T): T => styles,
     flatten: (style: unknown) => style,
@@ -54,6 +55,12 @@ mock.module('react-native', () => ({
     spring: () => ({ start: (cb?: () => void) => cb?.() }),
     parallel: () => ({ start: (cb?: () => void) => cb?.() }),
     sequence: () => ({ start: (cb?: () => void) => cb?.() }),
+  },
+  Easing: {
+    cubic: (t: number) => t,
+    out: (easing: (t: number) => number) => easing,
+    in: (easing: (t: number) => number) => easing,
+    inOut: (easing: (t: number) => number) => easing,
   },
   Vibration: {
     vibrate: () => {},
