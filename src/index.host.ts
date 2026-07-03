@@ -49,7 +49,7 @@ export {
   DropdownMenuItem,
   DropdownMenuText,
   DropdownMenuSubText,
-  GlobalAlert
+  GlobalAlert,
 } from './ui/index.host';
 
 export type { HandlerRegistry } from './api/index.host';

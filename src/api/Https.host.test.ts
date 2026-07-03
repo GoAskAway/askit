@@ -51,7 +51,7 @@ describe('HostHttpHandler', () => {
     const res = await HostHttpHandler.handleRequest({ requestId: 'r1', url: 'http://x' });
     expect(res.success).toBe(false);
     expect(res.status).toBe(0);
-    expect(res.data).toMatchObject({ message: 'network' });
+    expect((res.data as { message: string }).message).toBe('network');
   });
 
   it('POST 对象 body 补 application/json', async () => {
