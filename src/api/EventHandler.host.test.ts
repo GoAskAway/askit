@@ -28,8 +28,10 @@ describe('EventHandler.host', () => {
     EventHandler.setup(mock.engine as never, { tabId: 't1' });
     await mock.msg!({ event: 'GET_APP_INFO', payload: { requestId: 'r1' } });
     expect(mock.sent).toHaveLength(1);
-    expect(mock.sent[0].event).toBe('SEND_APP_INFO');
-    expect(mock.sent[0].payload).toMatchObject({ requestId: 'r1', appName: '' });
+    expect(mock.sent[0]?.event).toBe('SEND_APP_INFO');
+    const payload = mock.sent[0]?.payload as { requestId: string; appName: string };
+    expect(payload.requestId).toBe('r1');
+    expect(payload.appName).toBe('');
   });
 
   it('未知事件不 sendEvent', async () => {
@@ -59,7 +61,7 @@ describe('EventHandler.host', () => {
       },
     });
     await mock.msg!({ event: 'GET_APP_INFO', payload: { requestId: 'r1' } });
-    expect(mock.sent[0].payload).toMatchObject({ appName: 'Custom' });
+    expect((mock.sent[0]?.payload as { appName: string }).appName).toBe('Custom');
   });
 
   it('无 tabId 时 setup 返回 no-op', () => {
