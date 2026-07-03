@@ -18,10 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Actrium/rill
-          path: rill
-
-      - name: Link rill to ../rill
-        run: ln -s "$GITHUB_WORKSPACE/rill" "$GITHUB_WORKSPACE/../rill"
+          path: ../rill
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
